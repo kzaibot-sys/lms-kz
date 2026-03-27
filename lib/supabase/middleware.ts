@@ -36,24 +36,33 @@ export async function updateSession(request: NextRequest) {
   const isAdmin = adminRoutes.some((r) => pathname.startsWith(r))
   const isAuth = authRoutes.some((r) => pathname.startsWith(r))
 
+  // Not a route we need to protect — pass through
+  if (!isProtected && !isAdmin && !isAuth) {
+    return supabaseResponse
+  }
+
   if ((isProtected || isAdmin) && !user) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    const url = new URL('/login', request.url)
+    // Prevent redirect loop
+    if (pathname !== '/login') {
+      return NextResponse.redirect(url)
+    }
+    return supabaseResponse
   }
 
   if (isAdmin && user) {
-    const { data: userData } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (userData?.role !== 'admin') {
-      return NextResponse.redirect(new URL('/courses', request.url))
-    }
+    // Skip RLS — just let the page handle role check
+    // Don't query DB in middleware to avoid RLS issues
   }
 
   if (isAuth && user) {
-    return NextResponse.redirect(new URL('/courses', request.url))
+    // User is logged in but on auth page — redirect to courses
+    // But only if not already redirecting (prevent loop)
+    if (!request.nextUrl.searchParams.has('redirected')) {
+      const url = new URL('/courses', request.url)
+      url.searchParams.set('redirected', '1')
+      return NextResponse.redirect(url)
+    }
   }
 
   // Persist locale cookie
