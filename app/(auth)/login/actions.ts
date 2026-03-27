@@ -1,8 +1,8 @@
 'use server'
 
-import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 const loginSchema = z.object({
   email: z.string().email('Некорректный email'),
@@ -11,7 +11,7 @@ const loginSchema = z.object({
 
 type LoginState = {
   error?: string
-  success?: boolean
+  redirectTo?: string
 }
 
 export async function login(
@@ -39,8 +39,9 @@ export async function login(
     return { error: 'Неверный email или пароль' }
   }
 
-  // Check user status in users table
-  const { data: userDataRaw, error: userError } = await supabase
+  // Use admin client to bypass RLS
+  const admin = createAdminClient()
+  const { data: userDataRaw, error: userError } = await admin
     .from('users')
     .select('role, status')
     .eq('id', authData.user.id)
@@ -57,16 +58,11 @@ export async function login(
     return { error: 'Ваш аккаунт заблокирован. Обратитесь к администратору.' }
   }
 
-  // Redirect based on role
-  if (userData.role === 'admin') {
-    redirect('/admin')
-  }
-
-  redirect('/courses')
+  return { redirectTo: userData.role === 'admin' ? '/admin' : '/courses' }
 }
 
-export async function logout(): Promise<void> {
+export async function logout(): Promise<LoginState> {
   const supabase = createClient()
   await supabase.auth.signOut()
-  redirect('/login')
+  return { redirectTo: '/login' }
 }
