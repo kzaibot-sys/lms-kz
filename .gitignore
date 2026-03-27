@@ -47,3 +47,7 @@ docker-compose.override.yml
 # Supabase local
 supabase/.branches/
 supabase/.temp/
+
+# Claude Code internal
+.claude/
+.superpowers/
