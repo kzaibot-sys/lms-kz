@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email'),
@@ -30,7 +30,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
     }
 
-    const { data: userData, error: userError } = await supabase
+    // Use admin client to bypass RLS for user lookup after login
+    const adminClient = createAdminClient()
+    const { data: userData, error: userError } = await adminClient
       .from('users')
       .select('id, email, first_name, last_name, role, status, language, avatar_url')
       .eq('id', authData.user.id)
