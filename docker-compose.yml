@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .env
+    restart: always
+    depends_on:
+      - redis
+    networks:
+      - lms-network
+
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .env
+    restart: always
+    depends_on:
+      - redis
+    networks:
+      - lms-network
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    volumes:
+      - redis-data:/data
+    networks:
+      - lms-network
+    command: redis-server --appendonly yes
+
+volumes:
+  redis-data:
+
+networks:
+  lms-network:
+    driver: bridge

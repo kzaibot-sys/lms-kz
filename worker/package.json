@@ -1,0 +1,23 @@
+{
+  "name": "lms-worker",
+  "version": "1.0.0",
+  "description": "BullMQ video processing worker for LMS platform",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "ts-node-dev --respawn --transpile-only index.ts",
+    "build": "tsc",
+    "build:watch": "tsc --watch"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.47.10",
+    "bullmq": "^5.31.0",
+    "dotenv": "^16.4.5",
+    "ioredis": "^5.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5"
+  }
+}
